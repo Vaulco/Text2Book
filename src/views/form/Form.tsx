@@ -1,4 +1,4 @@
-import { IFormData, IResults } from '../../global/types.ts';
+import { IResults } from '../../global/types.ts';
 import useForm from '../../hooks/useForm.ts';
 import FormSettings from './FormSettings.tsx';
 import FormInput from './FormInput.tsx';
@@ -7,12 +7,10 @@ import FormSettingsAdvanced from './FormSettingsAdvanced.tsx';
 type Props = {
   showResults: IResults;
   loading: boolean;
-} & Pick<IFormData, 'outputFormat' | 'setOutputFormat'>;
+};
 
 function Form(props: Props) {
   const {
-    inputFormat,
-    setInputFormat,
     generationFormat,
     setGenerationFormat,
     minecraftVersion,
@@ -37,10 +35,6 @@ function Form(props: Props) {
   return (
     <>
       <FormSettings
-        inputFormat={inputFormat}
-        setInputFormat={setInputFormat}
-        outputFormat={props.outputFormat}
-        setOutputFormat={props.setOutputFormat}
         generationFormat={generationFormat}
         setGenerationFormat={setGenerationFormat}
         minecraftVersion={minecraftVersion}
@@ -62,8 +56,6 @@ function Form(props: Props) {
       />
       <hr className='mb-4 mt-4' />
       <FormInput
-        inputFormat={inputFormat}
-        setInputFormat={setInputFormat}
         generationFormat={generationFormat}
         setGenerationFormat={setGenerationFormat}
         text={text}

@@ -2,28 +2,17 @@ import {
   CommandTarget,
   GenerationFormat,
   IFormData,
-  InputFormat,
   IResults,
   JavaVersion,
   MinecraftVersion,
-  OutputFormat,
 } from '../global/types.ts';
 import useLocalStorage from 'use-local-storage';
 
 export default function useForm(showResults: IResults): IFormData {
-  // Normal states
   const [text, setText] = useLocalStorage('text', '');
   const [author, setAuthor] = useLocalStorage('author', '');
   const [title, setTitle] = useLocalStorage('title', '');
   const [nameSuffix, setNameSuffix] = useLocalStorage('nameSuffix', '');
-  const [inputFormat, setInputFormat] = useLocalStorage<InputFormat>(
-    'inputFormat',
-    'text'
-  );
-  const [outputFormat, setOutputFormat] = useLocalStorage<OutputFormat>(
-    'outputFormat',
-    'text'
-  );
   const [generationFormat, setGenerationFormat] = useLocalStorage<GenerationFormat>(
     'generationFormat',
     'commands'
@@ -58,10 +47,6 @@ export default function useForm(showResults: IResults): IFormData {
   };
 
   return {
-    inputFormat,
-    setInputFormat,
-    outputFormat,
-    setOutputFormat,
     generationFormat,
     setGenerationFormat,
     minecraftVersion,

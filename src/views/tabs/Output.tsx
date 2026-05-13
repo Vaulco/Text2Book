@@ -1,5 +1,4 @@
 import Tabs from '../../components/Tabs';
-import { IFormData } from '../../global/types';
 import { IBookOutput } from '../../global/types';
 import UnsupportedCharacters from './UnsupportedCharacters';
 import Results from './Results';
@@ -9,7 +8,7 @@ type Props = {
   setFadeIn: React.Dispatch<React.SetStateAction<number>>;
   fadeinProps: { fadein: number };
   timeToGenerate: number;
-} & Pick<IFormData, 'outputFormat'>;
+};
 
 function Output(props: Props) {
   return (
@@ -27,7 +26,6 @@ function Output(props: Props) {
                 fadeinProps={props.fadeinProps}
                 timeToGenerate={props.timeToGenerate}
                 setFadeIn={props.setFadeIn}
-                outputFormat={props.outputFormat}
               />
             ),
           },

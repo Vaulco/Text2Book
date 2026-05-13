@@ -1,12 +1,10 @@
 import classNames from 'classnames';
-import FileUpload from '../../components/FileUpload.tsx';
 import loader from '../../assets/loader.svg';
 import { IFormInput } from '../../global/types.ts';
 import TextInput from '../../components/TextInput.tsx';
 import TextArea from '../../components/TextArea.tsx';
 
 function FormInput(props: IFormInput) {
-  // Decides if load icon should be shown
   const ButtonTitle = () => {
     if (props.loading) {
       return (
@@ -50,27 +48,18 @@ function FormInput(props: IFormInput) {
         </div>
       </div>
       <div className='mb-4'>
-        <div className={classNames({ hidden: props.inputFormat === 'text' })}>
-          <FileUpload
-            label='Text'
-            callback={(text) => props.setText(text)}
-            useFileUpload={props.inputFormat === 'file'}
-          />
-        </div>
-        <div className={classNames({ hidden: props.inputFormat === 'file' })}>
-          <TextArea
-            label='Text'
-            id='text'
-            placeholder='Once upon a time, there was a girl...'
-            value={props.text}
-            setter={props.setText}
-            required={props.inputFormat === 'text'}
-          />
-          <span className='text-gray-500 text-sm'>
-            {props.text.length} characters,{' '}
-            {props.text.length > 0 ? props.text.trim().split(/\s+/).length : 0} words
-          </span>
-        </div>
+        <TextArea
+          label='Text'
+          id='text'
+          placeholder='Once upon a time, there was a girl...'
+          value={props.text}
+          setter={props.setText}
+          required
+        />
+        <span className='text-gray-500 text-sm'>
+          {props.text.length} characters,{' '}
+          {props.text.length > 0 ? props.text.trim().split(/\s+/).length : 0} words
+        </span>
       </div>
       <button
         type='submit'

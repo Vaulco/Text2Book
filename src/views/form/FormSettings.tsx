@@ -3,10 +3,6 @@ import MultiChoice from '../../components/MultiChoice.tsx';
 import Hint from '../../components/Hint.tsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faPenToSquare,
-  faFileImport,
-  faFileExport,
-  faFileLines,
   faComment,
   faTerminal,
   faCube,
@@ -18,58 +14,6 @@ import { faJava } from '@fortawesome/free-brands-svg-icons';
 function FormSettings(props: IFormSettings) {
   return (
     <>
-      <MultiChoice
-        name='input-method'
-        items={[
-          {
-            id: 'use-text-input',
-            label: (
-              <>
-                <FontAwesomeIcon icon={faPenToSquare} /> Text Input
-              </>
-            ),
-            checked: props.inputFormat === 'text',
-            callback: () => props.setInputFormat('text'),
-          },
-          {
-            id: 'use-file-input',
-            label: (
-              <>
-                <FontAwesomeIcon icon={faFileImport} /> File Input
-              </>
-            ),
-            checked: props.inputFormat === 'file',
-            callback: () => props.setInputFormat('file'),
-          },
-        ]}
-      />
-      <div className='mb-2' />
-      <MultiChoice
-        name='output-method'
-        items={[
-          {
-            id: 'use-text-output',
-            label: (
-              <>
-                <FontAwesomeIcon icon={faFileLines} /> Text Output
-              </>
-            ),
-            checked: props.outputFormat === 'text',
-            callback: () => props.setOutputFormat('text'),
-          },
-          {
-            id: 'use-file-output',
-            label: (
-              <>
-                <FontAwesomeIcon icon={faFileExport} /> File Output
-              </>
-            ),
-            checked: props.outputFormat === 'file',
-            callback: () => props.setOutputFormat('file'),
-          },
-        ]}
-      />
-      <div className='mb-2' />
       <MultiChoice
         name='generation_method'
         items={[

@@ -3,10 +3,6 @@ type LocalStorageSetter<T> = React.Dispatch<React.SetStateAction<T | undefined>>
 type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
 
 export type IFormData = {
-  inputFormat: InputFormat;
-  setInputFormat: LocalStorageSetter<InputFormat>;
-  outputFormat: OutputFormat;
-  setOutputFormat: LocalStorageSetter<OutputFormat>;
   generationFormat: GenerationFormat;
   setGenerationFormat: LocalStorageSetter<GenerationFormat>;
   minecraftVersion: MinecraftVersion;
@@ -33,16 +29,12 @@ export type IApp = {
   fadeinProps: { fadein: number };
   loading: boolean;
   timeToGenerate: number;
-  outputFormat: 'text' | 'file';
   showResults: IResults;
-  setOutputFormat: LocalStorageSetter<'text' | 'file'>;
   setFadeIn: StateSetter<number>;
 };
 
 export type IFormInput = Pick<
   IFormData,
-  | 'inputFormat'
-  | 'setInputFormat'
   | 'generationFormat'
   | 'setGenerationFormat'
   | 'text'
@@ -56,10 +48,6 @@ export type IFormInput = Pick<
 
 export type IFormSettings = Pick<
   IFormData,
-  | 'inputFormat'
-  | 'setInputFormat'
-  | 'outputFormat'
-  | 'setOutputFormat'
   | 'generationFormat'
   | 'setGenerationFormat'
   | 'minecraftVersion'
@@ -89,8 +77,6 @@ export type IResults = (
 export type MinecraftCharacter = { char: string; pixels: number };
 export type IBookOutput = { book: string[]; unsupportedCharacters: string[] };
 
-export type InputFormat = 'text' | 'file';
-export type OutputFormat = 'text' | 'file';
 export type JavaVersion = '1.13+' | '1.14+' | '1.20.5+' | '1.21.5+';
 export type MinecraftVersion = 'java' | 'bedrock';
 export type GenerationFormat = 'commands' | 'text';

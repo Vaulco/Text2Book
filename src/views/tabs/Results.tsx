@@ -17,6 +17,7 @@ function Results(props: Props) {
     page,
     blinkProps,
     truncatedResults,
+    nextCopyIndex,
     onAnimationEnd,
     copyAndNotify,
     removeCopiedRow,
@@ -29,7 +30,15 @@ function Results(props: Props) {
     <div className='mt-3'>
       {truncatedResults.length > 0 && (
         <div className='text-center text-gray-500 mb-2'>
-          Generated {props.results.book.length} lines in {props.timeToGenerate}s
+          Generated {props.results.book.length} items in {props.timeToGenerate}s
+          {props.results.book.length > 0 && (
+            <span className='ml-2 text-blue-500 font-medium'>
+              — Press <kbd className='bg-gray-200 text-gray-700 rounded px-1 py-0.5 text-xs font-mono'>Ctrl+V</kbd> to copy next
+              {nextCopyIndex < props.results.book.length
+                ? ` (next: #${nextCopyIndex + 1})`
+                : ' (all done!)'}
+            </span>
+          )}
         </div>
       )}
       <ol
@@ -40,7 +49,7 @@ function Results(props: Props) {
         {truncatedResults.map((result) => (
           <li
             key={result.index}
-            className={`flex rounded border overflow-hidden h-12 mb-1 listitem noblink ${blink.blink} ${blink.noblink}`}
+            className={`flex rounded border overflow-hidden h-12 mb-1 listitem noblink ${blink.blink} ${blink.noblink} ${result.index === nextCopyIndex ? 'ring-2 ring-blue-400' : ''}`}
             {...blinkProps}
             onAnimationEnd={onAnimationEnd}
           >

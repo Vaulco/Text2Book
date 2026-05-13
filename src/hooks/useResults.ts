@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { IBookOutput } from '../global/types';
 
 export default function useResults(results: IBookOutput) {
@@ -10,12 +10,16 @@ export default function useResults(results: IBookOutput) {
   const [copiedRows, setCopiedRows] = useState<number[]>([]);
   const blinkProps = { blink: blink };
 
+  // Tracks which index will be copied on the next Ctrl+V press
+  const nextIndexRef = useRef(0);
+
   /**
-   * Clear checked rows when results change.
+   * Clear checked rows and reset the auto-copy cursor when results change.
    */
   useEffect(() => {
     clearCheckedRows();
     setPage(1);
+    nextIndexRef.current = 0;
   }, [results]);
 
   /**
@@ -28,6 +32,39 @@ export default function useResults(results: IBookOutput) {
         .map((value, index) => ({ value, index: page * 10 - 10 + index }))
     );
   }, [results, page]);
+
+  /**
+   * Listen for Ctrl+V and copy the next result to the clipboard, then advance.
+   */
+  useEffect(() => {
+    if (results.book.length === 0) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        const idx = nextIndexRef.current;
+        if (idx >= results.book.length) return;
+
+        // Prevent the browser from also pasting into any focused element
+        e.preventDefault();
+
+        void navigator.clipboard.writeText(results.book[idx]);
+
+        // Mark as copied and advance cursor
+        setCopiedRows((prev) => [...prev, idx]);
+        nextIndexRef.current = idx + 1;
+
+        // Jump to the page that contains this index
+        const targetPage = Math.floor(idx / 10) + 1;
+        setPage(targetPage);
+
+        // Trigger blink animation
+        setBlink(1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [results]);
 
   /**
    * Go to the previous page.
@@ -101,6 +138,11 @@ export default function useResults(results: IBookOutput) {
   const clearCheckedRows = () => setCopiedRows([]);
 
   /**
+   * The index of the next item that will be copied on Ctrl+V.
+   */
+  const nextCopyIndex = nextIndexRef.current;
+
+  /**
    * Download the commands as a text file.
    */
   const download = useCallback(() => {
@@ -132,6 +174,7 @@ export default function useResults(results: IBookOutput) {
     blinkProps,
     truncatedResults,
     page,
+    nextCopyIndex,
     download,
     onAnimationEnd,
     copyAndNotify,

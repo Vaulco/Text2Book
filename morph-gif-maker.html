@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morph GIF Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: rgba(255,255,255,0.08);
+    --border-active: rgba(255,255,255,0.18);
+    --text: #f0efe8;
+    --text-muted: #888885;
+    --text-dim: #484845;
+    --accent: #c8f060;
+    --accent-dim: #8aab35;
+    --accent-bg: rgba(200,240,96,0.07);
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1.5rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  header h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  /* Upload zones */
+  .upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .upload-slot {
+    position: relative;
+    border: 1px dashed var(--border-active);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-slot:hover { border-color: var(--accent-dim); background: var(--surface2); }
+  .upload-slot.drag-over { border-color: var(--accent); background: var(--accent-bg); }
+  .upload-slot.has-image { border-style: solid; border-color: var(--border); }
+
+  .upload-slot input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .slot-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .slot-icon {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border-active);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    font-size: 18px;
+  }
+
+  .slot-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .slot-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .slot-preview {
+    position: absolute;
+    inset: 0;
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    display: none;
+    border-radius: var(--radius-lg);
+  }
+
+  .slot-badge {
+    position: absolute;
+    bottom: 8px; left: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.7);
+    color: var(--accent);
+    padding: 3px 7px;
+    border-radius: 4px;
+    display: none;
+    backdrop-filter: blur(4px);
+  }
+
+  /* Arrow between slots */
+  .upload-arrow {
+    display: none;
+  }
+
+  /* Controls panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .panel-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.25rem;
+  }
+
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.5rem;
+  }
+
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ctrl-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .ctrl-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--accent);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  select {
+    width: 100%;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  select:focus { border-color: var(--accent-dim); }
+
+  /* Generate button */
+  .btn-generate {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #0e0e0f;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .btn-generate:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+  .btn-generate:active:not(:disabled) { transform: translateY(0); }
+  .btn-generate:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  /* Output */
+  #output-section {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .progress-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .progress-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.12s;
+    border-radius: 2px;
+  }
+
+  .canvas-wrap {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #output-canvas {
+    display: block;
+    max-width: 100%;
+  }
+
+  .output-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .btn-action {
+    padding: 11px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-action:hover:not(:disabled) { border-color: var(--border-active); background: var(--surface2); }
+  .btn-action:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-action.primary { border-color: var(--accent-dim); color: var(--accent); }
+  .btn-action.primary:hover:not(:disabled) { background: var(--accent-bg); border-color: var(--accent); }
+
+  #gif-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>morph<span>.gif</span></h1>
+  <p>upload two images · blend · export</p>
+</header>
+
+<div class="app">
+
+  <!-- Upload -->
+  <div class="upload-grid">
+    <div class="upload-slot" id="zone-a">
+      <input type="file" accept="image/*" id="file-a" aria-label="Upload first image">
+      <div class="slot-inner">
+        <div class="slot-icon">⬡</div>
+        <div class="slot-label">Image A</div>
+        <div class="slot-hint">click or drop</div>
+      </div>
+      <img class="slot-preview" id="preview-a" alt="First image preview">
+      <span class="slot-badge" id="badge-a">A</span>
+    </div>
+    <div class="upload-slot" id="zone-b">
+      <input type="file" accept="image/*" id="file-b" aria-label="Upload second image">
+      <div class="slot-inner">
+        <div class="slot-icon">⬡</div>
+        <div class="slot-label">Image B</div>
+        <div class="slot-hint">click or drop</div>
+      </div>
+      <img class="slot-preview" id="preview-b" alt="Second image preview">
+      <span class="slot-badge" id="badge-b">B</span>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="panel">
+    <div class="panel-title">Settings</div>
+    <div class="controls-grid">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Frames <span class="ctrl-val" id="val-frames">20</span></div>
+        <input type="range" min="6" max="60" value="20" step="1" id="ctrl-frames">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Frame delay <span class="ctrl-val" id="val-delay">60ms</span></div>
+        <input type="range" min="20" max="300" value="60" step="10" id="ctrl-delay">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Morph mode</div>
+        <select id="ctrl-mode">
+          <option value="crossfade">Cross-fade</option>
+          <option value="dissolve">Pixel dissolve</option>
+          <option value="wipe">Wipe right</option>
+          <option value="radial">Radial wipe</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Output size</div>
+        <select id="ctrl-size">
+          <option value="320">320px</option>
+          <option value="480" selected>480px</option>
+          <option value="640">640px</option>
+        </select>
+      </div>
+      <div class="ctrl-group" style="grid-column: 1 / -1;">
+        <div class="ctrl-label">Loop mode</div>
+        <select id="ctrl-loop" style="width: 50%;">
+          <option value="pingpong" selected>Ping-pong (A→B→A)</option>
+          <option value="forward">Forward only (A→B)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-generate" id="btn-generate" disabled>Generate Morphing GIF</button>
+
+  <!-- Output -->
+  <div id="output-section">
+    <div class="progress-wrap">
+      <div class="progress-label" id="progress-label">Preparing…</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="output-canvas"></canvas>
+    </div>
+    <div class="output-actions">
+      <button class="btn-action primary" id="btn-download" disabled>↓ Download GIF</button>
+      <button class="btn-action" id="btn-preview" disabled>▶ Preview</button>
+    </div>
+    <div id="gif-status"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<script>
+const imgA = new Image(), imgB = new Image();
+let readyA = false, readyB = false;
+let gifBlob = null, previewFrames = [], previewIdx = 0, previewTimer = null;
+
+function setupSlot(zoneId, fileId, img, previewId, badgeId, side) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(fileId);
+  const preview = document.getElementById(previewId);
+  const badge = document.getElementById(badgeId);
+  const inner = zone.querySelector('.slot-inner');
+
+  function load(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      if (side === 'a') readyA = true; else readyB = true;
+      checkReady();
+    };
+    img.src = url;
+    preview.src = url;
+    preview.style.display = 'block';
+    badge.style.display = 'block';
+    inner.style.display = 'none';
+    zone.classList.add('has-image');
+  }
+
+  input.addEventListener('change', e => load(e.target.files[0]));
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); load(e.dataTransfer.files[0]); });
+}
+
+setupSlot('zone-a', 'file-a', imgA, 'preview-a', 'badge-a', 'a');
+setupSlot('zone-b', 'file-b', imgB, 'preview-b', 'badge-b', 'b');
+
+function checkReady() {
+  document.getElementById('btn-generate').disabled = !(readyA && readyB);
+}
+
+document.getElementById('ctrl-frames').addEventListener('input', function() {
+  document.getElementById('val-frames').textContent = this.value;
+});
+document.getElementById('ctrl-delay').addEventListener('input', function() {
+  document.getElementById('val-delay').textContent = this.value + 'ms';
+});
+
+function drawMorphFrame(ctx, w, h, t, mode) {
+  const cA = document.createElement('canvas'), cB = document.createElement('canvas');
+  cA.width = cB.width = w; cA.height = cB.height = h;
+  cA.getContext('2d').drawImage(imgA, 0, 0, w, h);
+  cB.getContext('2d').drawImage(imgB, 0, 0, w, h);
+  const dA = cA.getContext('2d').getImageData(0, 0, w, h);
+  const dB = cB.getContext('2d').getImageData(0, 0, w, h);
+  const out = ctx.createImageData(w, h);
+
+  if (mode === 'crossfade') {
+    for (let i = 0; i < out.data.length; i++) {
+      out.data[i] = Math.round(dA.data[i] * (1 - t) + dB.data[i] * t);
+    }
+  } else if (mode === 'dissolve') {
+    const seed = Math.floor(t * 997);
+    for (let p = 0; p < w * h; p++) {
+      const noise = ((p * 1664525 + seed * 22695477 + 1013904223) & 0x7fffffff) / 0x7fffffff;
+      const i = p * 4;
+      const src = noise < t ? dB : dA;
+      out.data[i] = src.data[i]; out.data[i+1] = src.data[i+1];
+      out.data[i+2] = src.data[i+2]; out.data[i+3] = 255;
+    }
+  } else if (mode === 'wipe') {
+    const cutX = Math.round(t * w);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const src = x < cutX ? dB : dA;
+      out.data[i] = src.data[i]; out.data[i+1] = src.data[i+1];
+      out.data[i+2] = src.data[i+2]; out.data[i+3] = 255;
+    }
+  } else if (mode === 'radial') {
+    const cx = w / 2, cy = h / 2;
+    const maxR = Math.sqrt(cx * cx + cy * cy);
+    const cutR = t * maxR;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const r = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+      const src = r < cutR ? dB : dA;
+      out.data[i] = src.data[i]; out.data[i+1] = src.data[i+1];
+      out.data[i+2] = src.data[i+2]; out.data[i+3] = 255;
+    }
+  }
+
+  ctx.putImageData(out, 0, 0);
+}
+
+document.getElementById('btn-generate').addEventListener('click', async () => {
+  const frames = parseInt(document.getElementById('ctrl-frames').value);
+  const delay = parseInt(document.getElementById('ctrl-delay').value);
+  const size = parseInt(document.getElementById('ctrl-size').value);
+  const mode = document.getElementById('ctrl-mode').value;
+  const loop = document.getElementById('ctrl-loop').value;
+
+  const aspect = imgA.naturalHeight / imgA.naturalWidth || 1;
+  const W = size, H = Math.max(1, Math.round(size * aspect));
+
+  const canvas = document.getElementById('output-canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  document.getElementById('output-section').style.display = 'flex';
+  document.getElementById('progress-label').textContent = 'Rendering frames…';
+  document.getElementById('btn-download').disabled = true;
+  document.getElementById('btn-preview').disabled = true;
+  document.getElementById('gif-status').textContent = '';
+
+  if (previewTimer) clearInterval(previewTimer);
+  previewFrames = []; gifBlob = null;
+
+  const ts = [];
+  for (let i = 0; i < frames; i++) ts.push(i / (frames - 1));
+  if (loop === 'pingpong') for (let i = frames - 2; i > 0; i--) ts.push(i / (frames - 1));
+
+  const totalFrames = ts.length;
+  const pf = document.getElementById('progress-fill');
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: W,
+    height: H,
+    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+  });
+
+  for (let fi = 0; fi < totalFrames; fi++) {
+    drawMorphFrame(ctx, W, H, ts[fi], mode);
+    pf.style.width = Math.round((fi / totalFrames) * 60) + '%';
+    await new Promise(r => setTimeout(r, 0));
+    const fc = document.createElement('canvas');
+    fc.width = W; fc.height = H;
+    fc.getContext('2d').drawImage(canvas, 0, 0);
+    previewFrames.push(fc);
+    gif.addFrame(fc, { delay, copy: true });
+  }
+
+  document.getElementById('progress-label').textContent = 'Encoding GIF…';
+  gif.on('progress', p => { pf.style.width = Math.round(60 + p * 40) + '%'; });
+  gif.on('finished', blob => {
+    gifBlob = blob;
+    pf.style.width = '100%';
+    document.getElementById('progress-label').textContent = 'Done';
+    document.getElementById('gif-status').textContent = `${(blob.size / 1024).toFixed(0)} KB · ${totalFrames} frames · ${W}×${H}px`;
+    document.getElementById('btn-download').disabled = false;
+    document.getElementById('btn-preview').disabled = false;
+    startPreview(delay);
+  });
+
+  gif.render();
+});
+
+function startPreview(delay) {
+  if (previewTimer) clearInterval(previewTimer);
+  const canvas = document.getElementById('output-canvas');
+  const ctx = canvas.getContext('2d');
+  previewIdx = 0;
+  const d = delay || parseInt(document.getElementById('ctrl-delay').value);
+  previewTimer = setInterval(() => {
+    if (!previewFrames.length) return;
+    ctx.drawImage(previewFrames[previewIdx], 0, 0);
+    previewIdx = (previewIdx + 1) % previewFrames.length;
+  }, d);
+}
+
+document.getElementById('btn-preview').addEventListener('click', startPreview);
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  if (!gifBlob) return;
+  const url = URL.createObjectURL(gifBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'morph.gif';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>

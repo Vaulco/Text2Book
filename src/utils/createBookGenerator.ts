@@ -9,11 +9,6 @@ import {
 import glyphs from '../data/glyphs.json';
 import createStringWrapper from './createStringWrapper';
 
-/**
- * Creates a character lexicon of glyphs.
- *
- * @returns The character lexicon.
- */
 function createCharacterLexicon() {
   const characterLexicon: MinecraftCharacter[] = [];
   for (const glyph of glyphs) {
@@ -22,41 +17,25 @@ function createCharacterLexicon() {
   return characterLexicon;
 }
 
-/**
- * Escapes special characters in the text based on the format (commands or text).
- *
- * @param inputText The text to escape.
- * @param generationFormat The format for the book generation (either 'commands' or 'text').
- * @returns The escaped text.
- */
 function escapeCharacters(
   inputText: string,
   generationFormat: GenerationFormat,
   javaVersion: JavaVersion
 ): string {
   if (generationFormat === 'text') {
-    return inputText.trim(); // Preserve newlines for text format
+    return inputText.trim();
   }
 
   const escapedText = inputText
-    .replace(/"/g, '\\\\"') // Escape double quotes (")
-    .replace(/'/g, "\\'") // Escape single quotes (')
-    .trim(); // Trim whitespace
+    .replace(/"/g, '\\\\"')
+    .replace(/'/g, "\\'")
+    .trim();
 
-  // Handle newlines differently based on Java version
   const newlineEscape = javaVersion === '1.21.5+' ? '\\n' : '\\\\n';
 
   return escapedText.replace(/\n/g, newlineEscape);
 }
 
-/**
- * Encapsulates the text with additional formatting based on the generation format and Java version.
- *
- * @param inputText The text to encapsulate.
- * @param generationFormat The format for the book generation (either 'commands' or 'text').
- * @param javaVersion The Java version to target.
- * @returns The formatted text.
- */
 function encapsulateText(
   inputText: string,
   generationFormat: GenerationFormat,
@@ -75,19 +54,6 @@ function encapsulateText(
   return '';
 }
 
-/**
- * Finalizes the book content by generating the proper command or text format based on the selected options.
- *
- * @param pages The pages of the book.
- * @param title The title of the book.
- * @param author The author of the book.
- * @param nameSuffix The suffix for the book name.
- * @param generationFormat The format for the book generation (either 'commands' or 'text').
- * @param minecraftVersion The Minecraft version ('java' or 'bedrock').
- * @param javaVersion The Java version ('1.20.4' or '1.20.5').
- * @param booksCounter The counter for generating multiple books.
- * @returns The final formatted book content.
- */
 function finalizeBook(
   pages: string[],
   title: string,
@@ -109,7 +75,6 @@ function finalizeBook(
         return `/give @p written_book[minecraft:written_book_content={pages:[${pages.join(',')}],title:"${titleWithSuffix}",author:"${author}"}]`;
       }
     } else if (minecraftVersion === 'bedrock') {
-      // FIXME: Bedrock format is not yet supported
       return `/give @p written_book[minecraft:written_book_content={pages:[${pages.join(',')}],title:"${titleWithSuffix}",author:"${author}"}]`;
     }
   } else if (generationFormat === 'text') {
@@ -119,23 +84,28 @@ function finalizeBook(
   return '';
 }
 
-/**
- * Creates a single book from the provided lines of text, splitting it into pages.
- * Each page will contain up to the specified number of lines and will be formatted
- * according to the specified generation format.
- *
- * @param lines - The lines of text to include in the book.
- * @param linesPerPage - The number of lines allowed per page in the book.
- * @param title - The title of the book.
- * @param author - The author of the book.
- * @param nameSuffix - A suffix to be added to the book's name.
- * @param generationFormat - The format for generating the book ('commands' or 'text').
- * @param minecraftVersion - The version of Minecraft the book is for ('java' or 'bedrock').
- * @param javaVersion - The version of Java to target for Java Minecraft editions.
- * @param booksCounter - A counter to track how many books have been generated.
- *
- * @returns The finalized book command or formatted text, depending on the generation format.
- */
+function padChapterBreaks(lines: string[], linesPerPage: number): string[] {
+  const result: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line.includes('Chapter') && result.length > 0) {
+      const remainder = result.length % linesPerPage;
+      if (remainder !== 0) {
+        const paddingNeeded = linesPerPage - remainder;
+        for (let j = 0; j < paddingNeeded; j++) {
+          result.push('');
+        }
+      }
+    }
+
+    result.push(line);
+  }
+
+  return result;
+}
+
 function createBook(
   lines: string[],
   linesPerPage: number,
@@ -159,7 +129,6 @@ function createBook(
       const escapedText = escapeCharacters(workerLine, generationFormat, javaVersion);
       const page = encapsulateText(escapedText, generationFormat, javaVersion);
 
-      // Reset for the next page
       workerLine = '';
       counter = 0;
 
@@ -167,7 +136,6 @@ function createBook(
     }
   });
 
-  // Handle any remaining lines
   if (workerLine.length > 0) {
     const escapedText = escapeCharacters(workerLine, generationFormat, javaVersion);
     const page = encapsulateText(escapedText, generationFormat, javaVersion);
@@ -186,14 +154,6 @@ function createBook(
   );
 }
 
-/**
- * Calculates the line limit based on the Minecraft version and format (commands or text).
- *
- * @param linesPerPage The number of lines allowed per page.
- * @param generationFormat The format for the book generation (either 'commands' or 'text').
- * @param minecraftVersion The Minecraft version ('java' or 'bedrock').
- * @returns The calculated line limit.
- */
 function calculateLineLimit(
   linesPerPage: number,
   generationFormat: GenerationFormat,
@@ -207,11 +167,6 @@ function calculateLineLimit(
   return 0;
 }
 
-/**
- * Gets the character limit based on the command target.
- * @param target The target who will execute the command.
- * @returns The character limit.
- */
 function getCharacterLimitFromCommandTarget(target: CommandTarget) {
   if (target === 'player') {
     return 256;
@@ -222,23 +177,6 @@ function getCharacterLimitFromCommandTarget(target: CommandTarget) {
   }
 }
 
-/**
- * Generates a series of books based on the provided parameters. The input text
- * is split into pages, formatted according to the specified generation format,
- * and returned as a series of books.
- *
- * @param params - The parameters for generating the books.
- * @param params.generationFormat - The format for generating the book ('commands' or 'text').
- * @param params.minecraftVersion - The version of Minecraft the book is for ('java' or 'bedrock').
- * @param params.title - The title of the book.
- * @param params.author - The author of the book.
- * @param [params.linesPerPage=14] - The number of lines allowed per page in the book.
- * @param [params.nameSuffix=''] - A suffix to be added to the book's name.
- * @param [params.javaVersion='1.20.4'] - The version of Java to target for Java Minecraft editions.
- * @param params.text - The text content to be split into books and pages.
- *
- * @returns The generated book data and the unsupported characters.
- */
 function createBookGenerator({
   generationFormat,
   minecraftVersion,
@@ -250,21 +188,20 @@ function createBookGenerator({
   text,
   commandTarget,
 }: IBookParameters) {
-  // Preparations
   const lineLimit = calculateLineLimit(linesPerPage, generationFormat, minecraftVersion);
   const lexicon = createCharacterLexicon();
   const stringWrapper = createStringWrapper(lexicon);
   const lines = stringWrapper.getSplitString(text);
+  const paddedLines = padChapterBreaks(lines, linesPerPage);
 
-  // Variables for the next couple of lines
   const library = [];
   let booksCounter = 0;
   let startIndex = 0;
   let indexOffset = 0;
 
-  while (startIndex < lines.length) {
-    const endIndex = Math.min(startIndex + lineLimit - indexOffset, lines.length);
-    const splicedLines = lines.slice(startIndex, endIndex);
+  while (startIndex < paddedLines.length) {
+    const endIndex = Math.min(startIndex + lineLimit - indexOffset, paddedLines.length);
+    const splicedLines = paddedLines.slice(startIndex, endIndex);
 
     const book = createBook(
       splicedLines,
@@ -278,17 +215,13 @@ function createBookGenerator({
       booksCounter
     );
 
-    // We check actively reduce the number of lines
-    // by increasing the offset until we are below the limit
     if (book.length > getCharacterLimitFromCommandTarget(commandTarget)) {
       indexOffset++;
       continue;
     }
 
-    // Only when the command is short enough do we add it
     library.push(book);
 
-    // Continue the loop
     startIndex = endIndex;
     indexOffset = 0;
     booksCounter++;
